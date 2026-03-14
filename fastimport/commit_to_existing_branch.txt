@@ -1,0 +1,76 @@
+Git’s fast-import is a powerful tool for bulk importing data into a Git repository, but by default, it tends to create new branches rather than appending to existing ones. To add commits to an existing branch using fast-import, you need to use specific commands and options.
+Key Concepts for Appending to an Existing Branch
+
+    reset Command
+        Before adding new commits, you must reset the branch to the last known commit of the existing branch.
+        This ensures fast-import knows where to start appending new commits.
+
+    from Directive
+        Use the from directive in the commit command to specify the parent commit(s) of the new commit(s).
+        This links your new commits to the existing branch history.
+
+    Branch Specification
+        Explicitly specify the branch name in the commit command to ensure commits are added to the correct branch.
+
+Example Workflow
+1. Reset the Branch
+
+reset refs/heads/<branch-name>
+commit refs/heads/<branch-name>
+
+    This resets the branch pointer to the last commit of <branch-name>.
+
+2. Add New Commits
+
+commit refs/heads/<branch-name>
+mark :<mark-id>
+committer <name> <email> <timestamp>
+data <<EOF
+<commit message>
+EOF
+from <parent-commit-sha1>
+M 644 inline <file-path>
+data <<EOF
+<file content>
+EOF
+
+    Replace <parent-commit-sha1> with the SHA-1 of the last commit in the existing branch.
+    Use from to set the parent commit(s) for the new commit.
+
+3. Repeat for Additional Commits
+
+    For each new commit, repeat the commit command, updating the from directive to reference the previous commit.
+
+Practical Example
+
+Suppose you want to append two new commits to the main branch:
+
+reset refs/heads/main
+
+# First new commit
+commit refs/heads/main
+mark :1
+committer Alice <alice@example.com> 1234567890 +0000
+data <<EOF
+Add feature X
+EOF
+from 1a2b3c4d5e6f7890  # SHA-1 of the last commit in 'main'
+M 644 inline README.md
+data <<EOF
+# Project README
+New content for feature X.
+EOF
+
+# Second new commit
+commit refs/heads/main
+mark :2
+committer Alice <alice@example.com> 1234567900 +0000
+data <<EOF
+Fix bug in feature X
+EOF
+from :1  # Reference the previous commit mark
+M 644 inline src/feature_x.py
+data <<EOF
+def fix_bug():
+    pass
+EOF
