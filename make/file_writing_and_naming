@@ -1,0 +1,35 @@
+## Makefile tips and tricks
+
+
+### $(file) and calculating output directories
+```
+# top.mk
+
+include nothing.mk
+SOURCE_BASE=/home/tnmurphy/src
+THIS_MAKEFILE:=$(firstword $(MAKEFILE_LIST))
+$(info try writing to a file for $(THIS_MAKEFILE))
+BUILD_OUTPUT:=/somewhere
+OUTPUT_DIR:=$(BUILD_OUTPUT)/$(patsubst $(SOURCE_BASE)/%,%,$(PWD))
+OBJS := a.obj b.obj c.obj
+ABS_OBJS:=$(addprefix $(OUTPUT_DIR)/,$(OBJS))
+$(file > linker_objs,$(ABS_OBJS))
+
+
+target:
+	$(MAKE) -C sub
+
+```
+
+In a subdirectory: 
+
+
+```
+# sub/Makefile
+THIS_MAKEFILE:=$(firstword $(MAKEFILE_LIST))
+$(info submakefile $(THIS_MAKEFILE))
+```
+
+The output shows that the toplevel makefile and submakefiles can determine their own names.
+
+It shows how to choose an output directory based on the path relative to a source directory
