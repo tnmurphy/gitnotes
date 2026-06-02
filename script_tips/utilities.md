@@ -147,20 +147,55 @@ get_project_name() {
 
 
 # the terminal title - defaults to the project name
+unset name_cache
+declare -Agx name_cache=()
 termtitle() {
     local title="$*"
-    if [[ -z $title ]]; then
-        title=$(get_project_name)
-    fi
-    echo -ne "\033]0;"$title"\007"
-}
+    local rname
+    local rstats=""
+    local hit=""
+    local termtitle
+    local root
+    local key="${PWD//[</-]/_}"
 
-set_basic_prompt() {
-	PS1='\[\033[1;32;40m\]\h\[\033[0;37;40m\]:\[\033[31;40m\][\[\033[1;34;40m\]\u\[\033[0;31;40m\]]\[\033[0;37;40m\]:\[\033[35;40m\]\w\[\033[1;33;40m\]$\[\033[0m\] 
+    root=${name_cache[$key]}
+    if [[ -z $root ]]; then
+        root=$(git rev-parse --show-toplevel 2>/dev/null)
+        hit=""
+    else
+        hit="(cache) "
+    fi
+    if [[ -n $root ]]; then
+        rname=$(basename "$root")
+        rstats=" gitrepo: ${rname} ${hit} -=E $(git branch --show-current)"
+        name_cache[$key]="$root"
+    fi
+    echo -ne "\033]0;"$USER@${HOSTNAME%%.*}:${PWD/#\$HOME/\\~}: ${rstats}"\007"
 }
 
 set_computed_prompt() {
-	export PROMPT_COMMAND=([0]="printf \"\\033]0;%s@%s:%s\\007\" \"\${USER}\" \"\${HOSTNAME%%.*}\" \"\${PWD/#\$HOME/\\~}\"")
+        export PROMPT_COMMAND="termtitle"
 }
+```
 
+viml - opening files at a line number from C compiler error messages
+```
+viml ()
+{
+    local line=$1;
+    shift;
+    local VIM=gvim;
+    if [[ -z $DISPLAY ]]; then
+        VIM=vim;
+    fi;
+    if [[ $line =~ ^([^:]*):([0-9]+)(:[0-9]:)?.*$ ]]; then
+        $VIM "${BASH_REMATCH[1]}" "+${BASH_REMATCH[2]}" $@;
+    else
+        if [[ $line =~ ^.*File\ *\"(.*)\",\ *line.([0-9]+).*$ ]]; then
+            $VIM "${BASH_REMATCH[1]}" "+${BASH_REMATCH[2]}" $@;
+        else
+            $VIM $line $@;
+        fi;
+    fi
+}
 ```
